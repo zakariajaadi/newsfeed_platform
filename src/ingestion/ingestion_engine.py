@@ -38,7 +38,7 @@ class IngestionEngine:
         self.semantic_filter = SemanticContentFilter(threshold=threshold)
 
         # Initialize ranking engine for scoring event importance
-        self.ranking_engine = RankingEngine(threshold=threshold)
+        self.ranking_engine = RankingEngine()
 
         # Initialize storage service for persisting processed events
         self.storage_service = vector_storage or VectorStorageService()
@@ -130,9 +130,9 @@ class IngestionEngine:
 
 
 
-    def rank_events(self, events: List[Event]) -> List[EnrichedEvent] :
+    def rank_events(self,  events: List[Event], filter_explanations: List[Dict]) -> List[EnrichedEvent] :
         """Rank events."""
-        return self.ranking_engine.rank_events(events)
+        return self.ranking_engine.rank_events(events, filter_explanations)
 
     def store_events(self, events: List[Union[Event, EnrichedEvent]]) -> Dict:
         """Store processed events in the vector database."""
@@ -169,5 +169,4 @@ class IngestionEngine:
            This method allows runtime adjustment of filtering sensitivity without recreating the orchestrator instance"""
         self.threshold = new_threshold
         self.semantic_filter.update_threshold(new_threshold)
-        self.ranking_engine.update_threshold(new_threshold)
         logger.info(f"Updated threshold to {new_threshold}")

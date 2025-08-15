@@ -74,9 +74,9 @@ class IngestionOrchestrator:
 
         return self.ingestion_engine.filter_events(events)
 
-    def rank_events(self, events: List[Event]) -> List[EnrichedEvent]:
+    def rank_events(self,  events: List[Event], filter_explanations: List[Dict]) -> List[EnrichedEvent]:
         """Rank events """
-        return self.ingestion_engine.rank_events(events)
+        return self.ingestion_engine.rank_events(events, filter_explanations)
 
 
     def store_events(self, events: List[Union[Event, EnrichedEvent]]) -> Dict:
@@ -112,7 +112,9 @@ class IngestionOrchestrator:
             # Step 3 : Rank events (relevant only)
             # Extract relevant events form filter_result
             relevant_events = [item['event'] for item in filter_result['relevant_events']]
-            enriched_events = self.rank_events(relevant_events)
+            events_explanations = [item['explanation'] for item in filter_result['relevant_events']]
+
+            enriched_events = self.rank_events(relevant_events, events_explanations)
 
             # Step 4: Store events into index
             storage_result = self.store_events(enriched_events)

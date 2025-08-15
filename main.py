@@ -157,7 +157,7 @@ def main():
 
     # Initialize services
     shared_storage = IngestionServiceFactory.create_shared_storage()
-    scheduler_service = IngestionServiceFactory.create_scheduler(threshold=0.5)
+    scheduler_service = IngestionServiceFactory.create_scheduler(threshold=0.5, vector_storage=shared_storage)
 
     if args.command == 'manual':
         run_manual_ingestion(scheduler_service)
