@@ -1,7 +1,5 @@
 import logging
-from datetime import datetime,timezone
 from typing import List, Dict, Union, Optional
-
 
 from src.filtering.semantic_filtering_engine import SemanticContentFilter
 from src.logging_setup import configure_logging

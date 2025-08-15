@@ -1,11 +1,11 @@
 import logging
-from typing import Optional
 import os
+from typing import Optional
 
 from src.logging_setup import configure_logging
-from src.storage.storage_service import VectorStorageService
-from src.orchestration.scheduler_service import SchedulerService
 from src.orchestration.ingestion_orchestrator import IngestionOrchestrator
+from src.orchestration.scheduler_service import SchedulerService
+from src.storage.storage_service import VectorStorageService
 
 # Set up logging
 logger = logging.getLogger(__name__)

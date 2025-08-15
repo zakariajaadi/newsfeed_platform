@@ -5,13 +5,14 @@ from typing import List
 import uvicorn
 from fastapi import FastAPI, HTTPException, status
 
+from src.logging_setup import configure_logging
 from src.models import Event, IngestResponse, EnrichedEvent
 from src.orchestration.ingestion_orchestrator import IngestionOrchestrator
 from src.orchestration.ingestion_service_factory import IngestionServiceFactory
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Set logging
 logger = logging.getLogger(__name__)
+configure_logging()
 
 # Initialize FastAPI app
 app = FastAPI(

@@ -113,7 +113,21 @@ class StreamlitDashboardUI:
         max_events = st.sidebar.number_input("Max events per tab", min_value=5, max_value=100, value=20)
         show_timestamps = st.sidebar.checkbox("Show timestamps", value=True)
 
-        return max_events, show_timestamps
+        # Importance vs Recency slider
+        st.sidebar.subheader("Ranking")
+        importance_weight = st.sidebar.slider(
+            "Importance x Recency",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.7,
+            step=0.1
+        )
+        recency_weight = 1.0 - importance_weight
+        st.sidebar.markdown(f"<small>Importance weight= {importance_weight:.2f} </small>", unsafe_allow_html=True)
+        st.sidebar.markdown(f"<small>Recency weight= {recency_weight:.2f} </small>", unsafe_allow_html=True)
+
+
+        return max_events, show_timestamps, importance_weight, recency_weight
 
     def render_ingestion_notice(self):
         """Show notice about using main.py for ingestion."""
@@ -131,12 +145,20 @@ class StreamlitDashboardUI:
 
 
     def render_dashboard_section(self, dashboard_service: DashboardService,
-                                 max_events: int, show_timestamps: bool):
+                                 max_events: int,
+                                 show_timestamps: bool,
+                                 importance_weight: float = 0.7,
+                                 recency_weight: float = 0.3):
         """Render the events section."""
         st.header("📰 Events")
 
         # Get all events for display
-        all_events = dashboard_service.get_all_events()
+        ### all_events = dashboard_service.get_all_events()
+
+        all_events = dashboard_service.get_all_events_reranked(
+            importance_weight=importance_weight,
+            recency_weight=recency_weight
+        )
 
         if not all_events:
             st.info("No events in storage. Use main.py to run ingestion.")
@@ -316,13 +338,12 @@ def main():
     # Get services (no modification time tracking needed)
     dashboard_service = ui.get_services()
 
-    # Rest of your existing code stays exactly the same...
-    max_events, show_timestamps = ui.render_sidebar()
+    max_events, show_timestamps, importance_weight, recency_weight = ui.render_sidebar()
 
     tab1, tab2, tab3 = st.tabs(["📊 Dashboard", "📰 Events", "🔍 Search"])
 
     with tab1:
-        all_events = dashboard_service.get_all_events()
+        all_events = dashboard_service.get_all_events_ranked()
         if not all_events:
             st.info("No events in storage. Use main.py to run ingestion.")
             ui.render_ingestion_notice()
@@ -331,7 +352,7 @@ def main():
             ui.render_statistics(stats)
 
     with tab2:
-        ui.render_dashboard_section(dashboard_service, max_events, show_timestamps)
+        ui.render_dashboard_section(dashboard_service, max_events, show_timestamps, importance_weight, recency_weight)
 
     with tab3:
         ui.render_search_section(dashboard_service)

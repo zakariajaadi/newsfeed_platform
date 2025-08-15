@@ -1,17 +1,17 @@
 import logging
-import os
 from functools import lru_cache
-from typing import List
 
 from dotenv import load_dotenv
-from huggingface_hub import login
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
 
+from src.logging_setup import configure_logging
 
 # Load environment variables
 load_dotenv()
 
+# Set logging
 logger = logging.getLogger(__name__)
+configure_logging()
 
 
 class EmbeddingService:

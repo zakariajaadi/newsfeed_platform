@@ -183,7 +183,6 @@ if __name__ == "__main__":
     # Initialize service
     shared_storage = IngestionServiceFactory.create_shared_storage()
     scheduler_service= IngestionServiceFactory.create_scheduler(threshold=0.5,vector_storage=shared_storage)
-
     # Test manual ingestion
     #print("Testing manual ingestion...")
     #result = run_manual_ingestion(scheduler_service)
@@ -227,7 +226,6 @@ if __name__ == "__main__":
         print(f"\n❌ Test failed: {e}")
         print("⏹️  Stopping scheduler...")
         stop_scheduler(scheduler_service)
-
 
 
 

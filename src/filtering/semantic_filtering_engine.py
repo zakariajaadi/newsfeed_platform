@@ -1,12 +1,15 @@
 import logging
+
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 from src.embedding.embedding_service import get_embedding_service_instance
+from src.logging_setup import configure_logging
 from src.models import Event
 
+# Set logging
 logger = logging.getLogger(__name__)
-
+configure_logging()
 
 class SemanticContentFilter:
     """ Semantic content filter for determining IT-relevance of events.

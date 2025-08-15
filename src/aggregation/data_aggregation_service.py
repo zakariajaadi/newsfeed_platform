@@ -11,6 +11,7 @@ import feedparser
 from src.logging_setup import configure_logging
 from src.models import Event
 
+# Set logging
 logger = logging.getLogger(__name__)
 configure_logging()
 

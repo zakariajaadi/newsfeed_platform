@@ -58,7 +58,7 @@ class VectorStorageService:
         # Save index metadata
         with open(self.metadata_file_path, 'wb') as f:
             pickle.dump({'id_to_event': self.id_to_event, 'next_id': self.next_id}, f)
-        print(f"Index saved with {self.index.ntotal} vectors")
+        logger.info(f"Index saved with {self.index.ntotal} vectors")
 
         # Reset _pending_writes (Unsaved changes counter)
         self._pending_writes = 0
@@ -156,6 +156,7 @@ class VectorStorageService:
         events = [meta['event'] for meta in self.id_to_event.values()]
 
         return events
+
     def get_all_events_ranked(self) -> List[EnrichedEvent]:
         """
         Retrieve all stored events in ranked order by importance.
@@ -193,6 +194,36 @@ class VectorStorageService:
         logger.info(f"Retrieved {len(sorted_enriched_events)} events in ranked order")
         return sorted_enriched_events
 
+    def get_all_events_reranked(self,
+                                importance_weight: float = 0.7,
+                                recency_weight: float = 0.3) -> List[EnrichedEvent]:
+        """
+        Rerank events dynamically based on user preferences.
+        """
+
+        # Retrieve all enriched events from storage
+        all_enriched_events = self.get_all_events()
+
+        # Handle empty storage case
+        if not all_enriched_events:
+            return []
+
+        for enriched_event in all_enriched_events:
+            recency_score = enriched_event.recency_score
+            importance_score = enriched_event.importance_score
+            new_final_score = importance_weight * importance_score + recency_weight * recency_score
+            enriched_event.final_score = new_final_score
+
+        # Since events already have final_score from ingestion we just sort them
+        # Sort events by importance score (descending) with secondary sort by ID for determinism
+        sorted_enriched_events = sorted(
+            all_enriched_events,
+            key=lambda x: (-(x.final_score or 0), x.id)
+        )
+
+        logger.info(f"Retrieved {len(sorted_enriched_events)} events in ranked order")
+        return sorted_enriched_events
+
     def filter_duplicates(self, events: List[Union[Event, EnrichedEvent]]) -> List[Union[Event, EnrichedEvent]]:
         """Filter out duplicate events before processing. Returns only new events."""
         new_events = []
@@ -218,7 +249,7 @@ class VectorStorageService:
         if event_id in self.id_to_event:
             self.index.remove_ids(np.array([event_id]))
             del self.id_to_event[event_id]
-            print(f"Removed event with ID {event_id}")
+            logger.info(f"Removed event with ID {event_id}")
 
     def clear_index(self):
         self.index.reset()
@@ -226,7 +257,7 @@ class VectorStorageService:
         for path in (self.index_file_path, self.metadata_file_path):
             if os.path.exists(path):
                 os.remove(path)
-        print("Index cleared")
+        logger.info("Index cleared")
 
     def get_index_stats(self):
         return {
@@ -243,68 +274,7 @@ class VectorStorageService:
         except:
             pass
 
-if __name__ == "__main__":
-    from datetime import datetime, timezone
 
-    # Create storage service (set autosave every 2 events for demo)
-    storage = VectorStorageService(autosave_every=2)
 
-    event1 = Event(
-        id="test-001",
-        source="azure-health",
-        title="Server outage affecting multiple clients",
-        body="Major downtime reported on the authentication server",
-        published_at=datetime.now(timezone.utc)
-    )
-
-    event2 = Event(
-        id="test-002",
-        source="reddit",
-        title="New coffee machine installed",
-        body="Office staff enjoying the new espresso machine",
-        published_at=datetime.now(timezone.utc)
-    )
-
-    event3 = Event(
-        id="test-003",
-        source="security-bulletin",
-        title="Critical vulnerability discovered",
-        body="Urgent patch required to prevent exploit",
-        published_at=datetime.now(timezone.utc)
-    )
-
-    # Store individually
-    storage.store_event(event1)
-    storage.store_event(event2)  # autosave will trigger here (autosave_every=2)
-
-    # Store batch
-    storage.store_events([event3])
-
-    print("\nIndex stats after insertions:", storage.get_index_stats())
-
-    # Search with a relevant query
-    results = storage.search("authentication server outage", top_k=2)
-    print("\nSearch results for 'authentication server outage':")
-    for event in results:
-        print(f"- {event.id}: {event.title}")
-
-    # Search with an unrelated query
-    results = storage.search("coffee", top_k=2)
-    print("\nSearch results for 'coffee':")
-    for event in results:
-        print(f"- {event.id}: {event.title}")
-
-    # Remove an event
-    storage.remove_event(1)  # This is the internal ID, not the Event.id string
-    print("\nIndex stats after removal:", storage.get_index_stats())
-
-    # Search after deletion
-    results = storage.search("coffee", top_k=2)
-    print("\nSearch results for 'coffee' after deletion:")
-    for event in results:
-        print(f"- {event.id}: {event.title}")
-
-    # Explicit save before exit
-    storage.save_index()
 
 

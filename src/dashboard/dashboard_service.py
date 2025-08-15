@@ -2,11 +2,13 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 
-from src.models import Event
+from src.logging_setup import configure_logging
+from src.models import Event, EnrichedEvent
 from src.storage.storage_service import VectorStorageService
 
+# Set logging
 logger = logging.getLogger(__name__)
-
+configure_logging()
 
 class DashboardService:
     """
@@ -41,10 +43,19 @@ class DashboardService:
             logger.error(f"Search error: {e}")
             return []
 
-    def get_all_events(self) -> List[Event]:
+    def get_all_events_ranked(self) -> List[EnrichedEvent]:
         """Get all stored events for dashboard display."""
         try:
             return self.vector_storage.get_all_events_ranked()
+        except Exception as e:
+            # Log error and return empty list to maintain UI stability
+            logger.error(f"Error retrieving events: {e}")
+            return []
+
+    def get_all_events_reranked(self, importance_weight: float = 0.7, recency_weight: float = 0.3) -> List[EnrichedEvent]:
+        """Get all stored events for dashboard display."""
+        try:
+            return self.vector_storage.get_all_events_reranked(importance_weight, recency_weight)
         except Exception as e:
             # Log error and return empty list to maintain UI stability
             logger.error(f"Error retrieving events: {e}")

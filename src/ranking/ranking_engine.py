@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List
 
-from src.models import Event, EnrichedEvent
 from src.logging_setup import configure_logging
+from src.models import Event, EnrichedEvent
 
 # Set logger
 logger = logging.getLogger(__name__)
@@ -269,6 +269,7 @@ class RankingEngine:
         Returns:
             List of ranked EnrichedEvent objects
         """
+        # Ensure length match between events list and explanations list
         if len(events) != len(filter_explanations):
             raise ValueError(
                 f"Events count ({len(events)}) must match filter_explanations count ({len(filter_explanations)})")
@@ -276,7 +277,8 @@ class RankingEngine:
         enriched_events = []
 
         for event, filter_explanation in zip(events, filter_explanations):
-            # Calculate importance using pre-computed filter explanation
+
+            # Calculate ranking score
             scores = self.calculate_ranking_score(event, filter_explanation)
 
             # Create EnrichedEvent object
@@ -287,10 +289,11 @@ class RankingEngine:
                 # Add enrichment fields with computed scores
                 semantic_score=scores['semantic_score'],
                 urgency_score=scores['urgency_score'],
-                recency_score=scores['recency_score'],
                 source_score=scores['source_score'],
-                matched_reference=scores['matched_reference'],
+                recency_score=scores['recency_score'],
+                importance_score = scores['importance_score'],
                 final_score=scores['final_score'],
+                matched_reference=scores['matched_reference'],
                 ingested_at=datetime.now(timezone.utc),
                 filter_passed=scores['is_relevant']
             )
@@ -308,83 +311,4 @@ class RankingEngine:
         return sorted_events
 
 
-# Example usage showing how to integrate with semantic filtering
-if __name__ == "__main__":
-    from datetime import timedelta
-    from src.filtering.semantic_filtering_engine import SemanticContentFilter
 
-    print("Testing Ranking Engine")
-    print("=" * 70)
-
-    # Test Events
-    now = datetime.now(timezone.utc)
-    test_events = [
-        Event(
-            id="critical-recent",
-            source="azure",
-            title="Critical outage affecting authentication services",
-            body="Authentication service down, affecting user logins",
-            published_at=now - timedelta(hours=1)
-        ),
-        Event(
-            id="security-old",
-            title="Security vulnerability in database systems",
-            body="Suspicious network activity flagged by monitoring systems",
-            source="security",
-            published_at=now - timedelta(hours=48)
-        ),
-        Event(
-            id="maintenance-recent",
-            title="Scheduled maintenance completed",
-            body="Regular system maintenance has been completed successfully",
-            source="devops",
-            published_at=now - timedelta(minutes=30)
-        ),
-        Event(
-            id="coffee-machine",
-            title="New coffee machine installed",
-            body="Espresso machine installed in kitchen area",
-            source="office",
-            published_at=now - timedelta(hours=2)
-        )
-    ]
-
-    # STEP 1: Run semantic filtering
-    print("Step 1: Computing semantic filter explanations (normally done in filtering stage)...")
-    semantic_filter = SemanticContentFilter(threshold=0.4)
-
-    filter_explanations = []
-    for event in test_events:
-        filter_explanation = semantic_filter.get_filter_explanation(event)
-        filter_explanations.append(filter_explanation)
-
-    # STEP 2: Run ranking using pre-computed filter explanations
-    print("Step 2: Ranking events using pre-computed filter explanations...")
-    ranking_engine = RankingEngine()  # NO semantic filter dependency!
-
-    ranked_events = ranking_engine.rank_events(test_events, filter_explanations)
-
-    # Show results
-    print(f"\n" + "=" * 70)
-    print("RANKING RESULTS:")
-    print("=" * 70)
-
-    for i, enriched_event in enumerate(ranked_events):
-        explanation = ranking_engine.get_ranking_explanation(enriched_event)
-
-        print(f"\n#{i + 1} - {explanation['event_id']}")
-        print(f"Title: {explanation['title']}")
-        print(f"Source: {explanation['source']} | Age: {explanation['age_hours']} hours")
-        print(f"IT Relevant: {'✅' if explanation['is_relevant'] else '❌'}")
-        print(f"Final Score: {explanation['final_score']}")
-        print(f"Stages:")
-        print(f"  • Importance: {explanation['stages']['importance_score']}")
-        print(f"  • Recency:    {explanation['stages']['recency_score']}")
-        print(f"Importance Components:")
-        print(f"  • Semantic: {explanation['importance_components']['semantic_score']} (FROM FILTER EXPLANATION)")
-        print(f"  • Urgency:  {explanation['importance_components']['urgency_score']}")
-        print(f"  • Source:   {explanation['importance_components']['source_score']}")
-        if explanation['matched_reference']:
-            print(f"Matched: '{explanation['matched_reference']}'")
-        print(f"Formula: {explanation['formula']}")
-        print("-" * 70)

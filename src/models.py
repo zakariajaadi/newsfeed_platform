@@ -45,8 +45,9 @@ class EnrichedEvent(Event):
     # Detailed scoring breakdown
     semantic_score: float= Field(..., description="Semantic score")
     urgency_score: float = Field(..., description="Urgency score")
-    recency_score: float = Field(..., description="Recency score")
     source_score: float = Field(..., description="Source score")
+    importance_score: float = Field(..., description="Importance score")
+    recency_score: float = Field(..., description="Recency score")
     final_score: Optional[float] = Field(None, description="Ranking importance score")
 
     # Filtering metadata
@@ -72,22 +73,3 @@ class IngestResponse(BaseModel):
     message: str = "Events ingested successfully"
 
 
-# Test the models work correctly
-if __name__ == "__main__":
-    # Example of creating an event
-    test_event = Event(
-        id="test-001",
-        source="reddit",
-        title="Major Azure outage affecting multiple services",
-        body="Users reporting widespread issues with Azure services including authentication failures.",
-        published_at=datetime.now()
-    )
-
-    print("Test Event Created:")
-    print(test_event.model_dump_json(indent=2))
-
-    # Example of ingest response
-    response = IngestResponse(
-        ingested_count=1,
-        message="Successfully processed 1 event"
-    )
