@@ -9,10 +9,6 @@ __pycache__/
 # Poetry virtual environment (if created inside the project)
 .venv/
 
-# Env file
-
-.env
-
 # Distribution / packaging
 build/
 dist/

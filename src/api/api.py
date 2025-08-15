@@ -91,28 +91,6 @@ async def retrieve_events() -> List[Event]:
             detail=f"Failed to retrieve events: {str(e)}"
         )
 
-@app.get("/retrieve_enriched", response_model=List[EnrichedEvent])
-async def retrieve_enriched_events() -> List[EnrichedEvent]:
-    """
-    Events retrieval endpoints.
-    """
-    try:
-        logger.info(f"Retrieving and ranking events")
-
-        # Enriched events sorted by final_score (descending) then by id for deterministic ordering
-        ranked_events = ingestion_orchestrator.get_all_events_ranked()
-
-        logger.info(f"Returning {len(ranked_events)} events in ranked order")
-
-        return ranked_events
-
-    except Exception as e:
-        logger.error(f"Error retrieving events: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve events: {str(e)}"
-        )
-
 @app.get("/health")
 async def health_check():
     """Health check endpoint with system status"""

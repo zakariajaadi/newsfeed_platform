@@ -176,11 +176,12 @@ def main():
 
 
 if __name__ == "__main__":
-    #main()
     from dotenv import load_dotenv
     load_dotenv()
+    main()
 
-    # Initialize service
+
+    """# Initialize service
     shared_storage = IngestionServiceFactory.create_shared_storage()
     scheduler_service= IngestionServiceFactory.create_scheduler(threshold=0.5,vector_storage=shared_storage)
     # Test manual ingestion
@@ -225,7 +226,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
         print("⏹️  Stopping scheduler...")
-        stop_scheduler(scheduler_service)
+        stop_scheduler(scheduler_service)"""
 
 
 
