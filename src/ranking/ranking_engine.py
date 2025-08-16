@@ -27,8 +27,8 @@ class RankingEngine:
 
         # Final score weights (balance importance x recency)
         self.final_weights = {
-            'importance': 0.7,  # 70% - What matters (importance)
-            'recency': 0.3  # 30% - Freshness boost (recency)
+            'importance': 0.7,  # 70%
+            'recency': 0.3  # 30%
         }
 
         # Additional importance boosters for ranking (beyond basic IT relevance)

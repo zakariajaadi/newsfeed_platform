@@ -39,15 +39,10 @@ services:
 
   scheduler:
     image: zakariajaadi/newsfeed-platform-image:latest
-    environment:
-      - HF_TOKEN=${HF_TOKEN}
     volumes:
       - newsfeed-data:/app/data
     command: python main.py daemon --threshold 0.5 --interval 5
     restart: unless-stopped
-
-
-
 
 volumes:
   newsfeed-data:

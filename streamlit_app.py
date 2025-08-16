@@ -304,27 +304,7 @@ class StreamlitDashboardUI:
             else:
                 st.info("No matching events found.")
 
-        # Storage management
-        with st.expander("🔧 Storage Management"):
-            col1, col2, col3 = st.columns(3)
 
-            with col1:
-                if st.button("📊 Show Storage Stats"):
-                    stats = dashboard_service.get_storage_stats()
-                    st.json(stats)
-
-            with col2:
-                if st.button("🔄 Refresh Data", help="Clear cache and reload data from storage"):
-                    st.cache_resource.clear()
-                    st.success("Cache cleared! Data refreshed.")
-                    st.rerun()
-
-            with col3:
-                if st.button("🗑️ Clear Storage", type="secondary"):
-                    if st.button("⚠️ Confirm Clear", type="secondary"):
-                        dashboard_service.clear_storage()
-                        st.success("Storage cleared!")
-                        st.rerun()
 
 
 def main():

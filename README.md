@@ -10,67 +10,85 @@ The system uses machine learning-based content filtering to identify relevant IT
 
 ## ✨ Features
 
-- Multi-Source Aggregation: Reddit (r/sysadmin, r/outages, r/cybersecurity), RSS feeds (Krebs Security, AWS/Azure status)
-- Semantic Content Filtering: ML-based relevance detection using sentence embeddings and cosine similarity.
-- Dynamic Ranking: Ranking engine that combines events importance and recency, enabling real-time adjustments to prioritize either high-value or fresh events depending on user preference.
-- Vector Storage: FAISS-based storage with efficient similarity search
-- Interactive Dashboard: Streamlit web interface with real-time preference controls
-- REST API: Mock Newsfeed API compliance for automated testing
+- **Multi-Source Aggregation:** Reddit (r/sysadmin, r/outages, r/cybersecurity), RSS feeds (Krebs Security, AWS/Azure status)
+- **Semantic Content Filtering:** ML-based relevance detection using sentence embeddings and cosine similarity.
+- **Dynamic Ranking:** Ranking engine that combines events importance and recency, enabling real-time adjustments to prioritize either high-value or fresh events depending on user preference.
+- **Vector Storage:** FAISS-based storage with efficient similarity search
+- **Interactive Dashboard:** Streamlit web interface with real-time ranking preference controls
+- **REST API:** Mock Newsfeed API compliance for automated testing
 
-## 🛠️ Tools & Technologies
+## 🛠️ Tools
 
-### **Core Framework**
+ **Core Framework**
 - **Python 3.12** - Primary development language
 - **Poetry** - Dependency management and virtual environment handling
 
-### **Data Sources & APIs**
+ **Data Sources & APIs**
 - **PRAW** - Python Reddit API Wrapper for subreddit aggregation
 - **Feedparser** - RSS feed parsing for news sources
 - **Requests** - HTTP client for API interactions
 - **FastAPI** - REST API framework for Mock Newsfeed compliance
 
-### **Machine Learning & NLP**
+ **Machine Learning & NLP**
 - **Sentence Transformers** - all-MiniLM-L6-v2 model for semantic embeddings 
 
-### **Storage & Search**
+ **Storage & Search**
 - **FAISS Index** - Vector similarity search and storage
 - **Pickle** - Event serialization for hashing 
 
-### **User Interface**
+ **User Interface**
 - **Streamlit** - Interactive web dashboard with real-time controls
 - **Plotly** - Data visualization and charts
 - **HTML/CSS** - Custom styling and responsive design
 
-### **Development & Deployment**
+ **Development & Deployment**
 - **Docker** - Containerization for consistent deployment
-- **Docker Compose** - for multi container set up
+- **Docker Compose** - for multi-container set up
 - **Git** - Version control and collaboration
 
 ## 🎯 Key Design Decisions
 
-### Semantic vs Keyword Filtering:
+### 1. Filtering method:
+
 Opted for semantic embeddings instead of traditional keyword matching, for deeper context understanding, improved relevance, and fewer false positives.
-### Ranking method:
-Opted for two-stage approach, balancing importance and recency 
+
+Implemented a multi-stage filtering approach to ensure content quality and eliminate duplicates:
+
+1. **Deduplication using Content Hashing:**
+
+- Generate SHA-256 hashes from concatenated event title and body text
+- Compare hashes against existing stored events to filter out duplicates before storage
+- Only new events (not found in storage) proceed to the next step
+
+2. **Semantic Relevance Filtering:**
+
+- Events passing deduplication are evaluated using all-MiniLM-L6-v2 sentence embeddings
+- Cosine similarity comparison against 39 curated IT reference phrases
+- Maximum similarity score across all reference phrases is used as the event's semantic relevance score
+- Configurable threshold (default: 0.5) to control filtering strictness
+- Only semantically relevant events proceed to ranking stage
+
+### 2. Ranking method:
+Opted for a two-stage approach, balancing importance and recency:
 1. **Importance score calculation:**
-<br><br> formula : `Importance_score = Semantic_score (60%) + Urgency_score (30%) + Source_score (10%)
-`
- Where :
-- *Semantic relevance (60%):*  ML-Based event relevance using **all-MiniLM-L6-v2** sentence embeddings and cosine similarity against 39 IT reference phrases such as 
-- *Urgency (30%):* Keyword-based criticality detection scanning for terms like "critical", "emergency", ... etc., to boost urgent events.
-- *Source credibility (10%):* Weighted trust scores based on source reliability. Helps official channels nudge past community chatter without feeling like a hard bias.
+
+**formula:** `Importance_score = Semantic_score (60%) + Urgency_score (30%) + Source_score (10%)`
+  Where      :
+- *Semantic relevance (60%):*  ML-Based event relevance using **all-MiniLM-L6-v2** sentence embeddings and cosine similarity against 39 IT reference phrases such as "security breach", "server outage" ... etc.
+- *Urgency (30%):* Keyword-based criticality detection scanning for terms like "critical", "emergency", ... etc.
+- *Source credibility (10%):* Weighted trust scores based on source reliability. Helps prioritize official channels over community discussions.
 2. **Recency score:**
-<br> Recency is modeled with a 12-hour exponential decay. 
-
+- Time-based scoring using exponential decay with a 12-hour half-life. 
+- Formula: `Recency_score = e^(-age_in_hours/12)`, where newer events score closer to 1.0 and older events approach 0.
 3. **Final ranking score calculation:**
-<br>formula : `Final Score = Importance(70%) + Recency(30%)
-`
 
-### Modular Architecture: 
+- formula : `Final Score = Importance(70%) + Recency(30%)`
+
+### 3. Modular Architecture: 
 
 Separated core concerns (aggregation, embedding, filtering, ranking, storage, orchestration, UI, and scheduling) into independent components for improved testability, maintainability, and extensibility.
 
-### Vector Storage vs Traditional database: 
+### 4. Vector Storage
 Opted for FAISS over traditional databases to provide native similarity search, efficient handling of sentence embeddings, and scalable vector operations essential for semantic filtering.
 
 
@@ -88,6 +106,10 @@ I would opt for :
 - Move from a single in-memory index to a distributed vector store like (Pinecone, Weaviate) to support high volume and concurrency.
 - Horizontal partitioning by source/time
 - Caching layers for hot data
+
+**Orchestration & Workflow Management:**
+- Replace APScheduler with an enterprise-grade orchestration platforms like **Prefect** or **Airflow** for advanced scheduling, dependency management, retry logic, and distributed task execution.
+- Deploy the system on Kubernetes to handle containerized services, automatic scaling, self-healing, and rolling updates, ensuring resilience and elasticity under heavy load
 
 ### Answer for Question 2 (False Alarms/Fake News Detection):
 
@@ -113,17 +135,17 @@ Previously fine-tuned a BERT model for phishing URL detection, achieving high ac
 
 ## 🛠️ Installation
 
-1. Clone the git repository:
+1. Clone the Git repository:
    ``` bash
    git clone https://github.com/zakariajaadi/newsfeed-platform.git
-   cd platform
+   cd newsfeed platform
    ```
 2. Start docker compose services:
 
    ```bash
    docker-compose up
    ```
-3. Services status:  Check if all services are running:
+3. Check services status:  Check if all services are running:
     ```bash
    docker ps
    ```
@@ -135,7 +157,7 @@ You should see three services:
 
 - **Dashboard:** http://localhost:8501
 - **API doc:** : http://localhost:8000/
-- **Scheduler**: Running in background (automatic news ingestion every 5 minutes with threshold of 0.5 in assessing event relevance if Filtering step)
+- **Scheduler**: Running in the background (automatically fetches and processes news every 5 minutes, keeping only events with relevance scores ≥ 0.5)
 
 ### 📡 API Endpoints (Mock Newsfeed)
 
@@ -157,14 +179,18 @@ Api doc
 
 **Current State**: Parameters like semantic similarity threshold (0.5), reference phrases, ranking weights, and source priorities are hardcoded throughout the application.
 
-**Enhancement**: Centralized configuration system using YAML/JSON files.
+**Proposed Enhancement**: Centralized configuration system using YAML/JSON files.
 
-### Orchestration 
+###  Re-ranking 
 
-**Current State**: Simple APScheduler for periodic ingestion with basic job scheduling and limited observability.
+Current State: Consumers can only adjust a single combined importance × recency weight, limiting fine-grained control over how results are prioritized.
 
-**Proposed Enhancement**: Replace APScheduler with enterprise-grade orchestration platforms such as Prefect and Airflow.
+Proposed Enhancement: Multi-factor weight control with granular customization:
 
+- Separate controls for semantic relevance (currently 60% of importance)
+- Independent urgency factor adjustment (currently 30% of importance)  
+- Source credibility weighting (currently 10% of importance)
+- Recency decay rate configuration (currently fixed 12-hour exponential)
 
 
 

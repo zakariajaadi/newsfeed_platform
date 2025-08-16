@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 configure_logging()
 
 @dataclass
-class SourceConfig:
+class   SourceConfig:
     """Configuration for all sources"""
     name: str
     plugin_type: str
