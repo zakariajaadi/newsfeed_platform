@@ -39,7 +39,8 @@ async def ingest_events(events: List[Event]) -> IngestResponse:
         # Step 2: Rank events (relevant only)
         # Extract relevant events from filter_result
         relevant_events = [item['event'] for item in filter_result['relevant_events']]
-        enriched_events = ingestion_orchestrator.rank_events(relevant_events)
+        events_explanations = [item['explanation'] for item in filter_result['relevant_events']]
+        enriched_events = ingestion_orchestrator.rank_events(relevant_events,events_explanations)
 
         # Step 3: Store events into index
         storage_result = ingestion_orchestrator.store_events(enriched_events)

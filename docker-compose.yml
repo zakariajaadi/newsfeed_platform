@@ -1,0 +1,53 @@
+services:
+  api:
+    image: zakariajaadi/newsfeed-platform-image:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - newsfeed-data:/app/data
+    command: python -m uvicorn src.api.api:app --host 0.0.0.0
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://api:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+
+  dashboard:
+    image: zakariajaadi/newsfeed-platform-image:latest
+    ports:
+      - "8501:8501"
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_ENABLECORS=false
+      - STREAMLIT_SERVER_ENABLEXSRFPROTECTION=false
+    volumes:
+      - newsfeed-data:/app/data
+    command: > 
+      streamlit run streamlit_app.py
+      --server.address 0.0.0.0
+      --server.port=8501
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8501/_stcore/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  scheduler:
+    image: zakariajaadi/newsfeed-platform-image:latest
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+    volumes:
+      - newsfeed-data:/app/data
+    command: python main.py daemon --threshold 0.5 --interval 5
+    restart: unless-stopped
+
+
+
+
+volumes:
+  newsfeed-data:
