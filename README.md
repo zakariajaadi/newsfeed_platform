@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 # 📰 IT Newsfeed platform
 
 ## 📝 Description
@@ -91,49 +91,18 @@ Separated core concerns (aggregation, embedding, filtering, ranking, storage, or
 ### 4. Vector Storage
 Opted for FAISS over traditional databases to provide native similarity search, efficient handling of sentence embeddings, and scalable vector operations essential for semantic filtering.
 
+##  📊 Architecture Diagram
 
-##  💡 Answers to bonus questions
-
-### Answer to Question 1 (Scalability considerations):
-
-I would opt for :  
-
-**Distributed Processing:**
-
-- Message queues (e.g., Kafka, RabbitMQ, or Pulsar) to handle high-frequency updates from hundreds of channels. This ensures that updates are buffered and can be processed asynchronously, preventing the system from being overwhelmed
-
-**Storage Scaling:**
-- Move from a single in-memory index to a distributed vector store like (Pinecone, Weaviate) to support high volume and concurrency.
-- Horizontal partitioning by source/time
-- Caching layers for hot data
-
-**Orchestration & Workflow Management:**
-- Replace APScheduler with an enterprise-grade orchestration platforms like **Prefect** or **Airflow** for advanced scheduling, dependency management, retry logic, and distributed task execution.
-- Deploy the system on Kubernetes to handle containerized services, automatic scaling, self-healing, and rolling updates, ensuring resilience and elasticity under heavy load
-
-### Answer for Question 2 (False Alarms/Fake News Detection):
-
-**ML-Based Approach:**
-- Curate a labeled dataset of legitimate vs fake IT news over time
-- Fine-tune a BERT classifier for IT-specific fake news detection
-- Integrate the classifier as an additional filtering stage in the pipeline
-
-> **Prior Experience:**
-Previously fine-tuned a BERT model for phishing URL detection, achieving high accuracy with minimal training data. The power of fine-tuning is that we don't need massive datasets since pre-trained models already understand language patterns, requiring only few domain-specific examples to adapt.
-
-**Complementary Techniques:**
-- Source reputation scoring based on historical accuracy
-- Cross-source validation (multiple independent sources reporting same event)
-- Optional feedback loop: continuously update the dataset with confirmed false positives to improve future detection
+<img width="921" height="487" alt="image" src="https://github.com/user-attachments/assets/36ff6de4-27bb-4d32-9fb6-3e5bd24415e5" />
 
 ## 🚀 Installation & Setup
 
-## 📌 Prerequisites
+### 📌 Prerequisites
 
 - Docker
 - Docker Compose
 
-## 🛠️ Installation
+### 🛠️ Installation
 
 1. Clone the Git repository:
    ``` bash
@@ -191,6 +160,40 @@ Proposed Enhancement: Multi-factor weight control with granular customization:
 - Independent urgency factor adjustment (currently 30% of importance)  
 - Source credibility weighting (currently 10% of importance)
 - Recency decay rate configuration (currently fixed 12-hour exponential)
+
+##  💡 Answers to bonus questions
+
+### Answer to Question 1 (Scalability considerations):
+
+I would opt for :  
+
+**Distributed Processing:**
+
+- Message queues (e.g., Kafka, RabbitMQ, or Pulsar) to handle high-frequency updates from hundreds of channels. This ensures that updates are buffered and can be processed asynchronously, preventing the system from being overwhelmed
+
+**Storage Scaling:**
+- Move from a single in-memory index to a distributed vector store like (Pinecone, Weaviate) to support high volume and concurrency.
+- Horizontal partitioning by source/time
+- Caching layers for hot data
+
+**Orchestration & Workflow Management:**
+- Replace APScheduler with an enterprise-grade orchestration platforms like **Prefect** or **Airflow** for advanced scheduling, dependency management, retry logic, and distributed task execution.
+- Deploy the system on Kubernetes to handle containerized services, automatic scaling, self-healing, and rolling updates, ensuring resilience and elasticity under heavy load
+
+### Answer for Question 2 (False Alarms/Fake News Detection):
+
+**ML-Based Approach:**
+- Curate a labeled dataset of legitimate vs fake IT news over time
+- Fine-tune a BERT classifier for IT-specific fake news detection
+- Integrate the classifier as an additional filtering stage in the pipeline
+
+> **Prior Experience:**
+Previously fine-tuned a BERT model for phishing URL detection, achieving high accuracy with minimal training data. The power of fine-tuning is that we don't need massive datasets since pre-trained models already understand language patterns, requiring only few domain-specific examples to adapt.
+
+**Complementary Techniques:**
+- Source reputation scoring based on historical accuracy
+- Cross-source validation (multiple independent sources reporting same event)
+- Optional feedback loop: continuously update the dataset with confirmed false positives to improve future detection
 
 
 
