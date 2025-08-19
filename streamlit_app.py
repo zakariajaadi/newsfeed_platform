@@ -69,6 +69,13 @@ class StreamlitDashboardUI:
             margin: 1rem 0;
         }
         
+        .event-body {
+            background-color: #f0f8ff;
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+        }
+        
         </style>
         """, unsafe_allow_html=True)
 
@@ -245,42 +252,50 @@ class StreamlitDashboardUI:
 
     def render_events_display(self, events: List[Dict], title: str,
                               max_events: int, show_timestamps: bool):
-        """Render events list."""
+        """Render events"""
+
+
         st.subheader(f"{title} ({len(events)} total)")
 
         if not events:
             st.info("No events to display.")
             return
 
-        # Pagination
         display_events = events[:max_events]
         if len(events) > max_events:
             st.info(f"Showing first {max_events} of {len(events)} events")
 
-        # Events display
         for i, event in enumerate(display_events, 1):
             with st.container():
-                col1, col2 = st.columns([4, 1])
+                # Event title
+                st.markdown(f"### {i}. {event['title']}")
 
-                with col1:
-                    st.markdown(f"### {i}. {event['title']}")
-                    st.write(event['body'])
+                snippet_length = 400
+                body_snippet = event['body'][:snippet_length]
 
-                    caption_parts = [f"Source: {event['source']}"]
-                    if show_timestamps:
-                        caption_parts.append(f"Published: {event['published_at']}")
+                # If body is long, show snippet plus expander
+                if len(event['body']) > snippet_length:
+                    st.markdown(f"<div class='event-body'>{body_snippet}...</div>", unsafe_allow_html=True)
+                    with st.expander("Read full event"):
+                        st.markdown(f"<div class='event-body'>{event['body']}</div>", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"<div class='event-body'>{event['body']}</div>", unsafe_allow_html=True)
 
-                    st.caption(" | ".join(caption_parts))
+                # Caption with age
+                caption_parts = [f"📡 Source: {event['source']}"]
+                if show_timestamps:
+                    caption_parts.append(f"📅 Published: {event['published_at']}")
 
-                with col2:
-                    age = event.get('age_minutes', 0)
-                    if age < 60:
-                        st.metric("Age", f"{age:.0f} minutes")
-                    elif age < 1440:  # Less than 24 hours (24 * 60 = 1440 minutes)
-                        st.metric("Age", f"{age / 60:.1f} hours")
-                    else:  # 24 hours or more
-                        st.metric("Age", f"{age / 1440:.0f} days")
+                age = event.get('age_minutes', 0)
+                if age < 60:
+                    age_str = f"{age:.0f}m ago"
+                elif age < 1440:
+                    age_str = f"{age / 60:.1f}h ago"
+                else:
+                    age_str = f"{age / 1440:.0f}d ago"
+                caption_parts.append(f"⏱️ {age_str}")
 
+                st.caption(" | ".join(caption_parts))
                 st.divider()
 
     def render_search_section(self, dashboard_service: DashboardService):

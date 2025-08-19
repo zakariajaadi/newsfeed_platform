@@ -10,6 +10,7 @@ import numpy as np
 from src.embedding.embedding_service import EmbeddingService
 from src.logging_setup import configure_logging
 from src.models import Event, EnrichedEvent
+from src.ranking.ranking_engine import RankingEngine
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -195,6 +196,7 @@ class VectorStorageService:
         return sorted_enriched_events
 
     def get_all_events_reranked(self,
+                                ranking_engine: RankingEngine,
                                 importance_weight: float = 0.7,
                                 recency_weight: float = 0.3) -> List[EnrichedEvent]:
         """
@@ -209,7 +211,7 @@ class VectorStorageService:
             return []
 
         for enriched_event in all_enriched_events:
-            recency_score = enriched_event.recency_score
+            recency_score = ranking_engine.calculate_recency_score(enriched_event.published_at)
             importance_score = enriched_event.importance_score
             new_final_score = importance_weight * importance_score + recency_weight * recency_score
             enriched_event.final_score = new_final_score
@@ -273,8 +275,5 @@ class VectorStorageService:
                 self.save_index()
         except:
             pass
-
-
-
 
 

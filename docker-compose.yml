@@ -1,6 +1,6 @@
 services:
   api:
-    image: zakariajaadi/newsfeed-platform-image:latest
+    image: newsfeed-platform-image:latest
     ports:
       - "8000:8000"
     volumes:
@@ -16,7 +16,7 @@ services:
 
 
   dashboard:
-    image: zakariajaadi/newsfeed-platform-image:latest
+    image: newsfeed-platform-image:latest
     ports:
       - "8501:8501"
     environment:
@@ -38,10 +38,13 @@ services:
     restart: unless-stopped
 
   scheduler:
-    image: zakariajaadi/newsfeed-platform-image:latest
+    image: newsfeed-platform-image:latest
     volumes:
       - newsfeed-data:/app/data
-    command: python main.py daemon --threshold 0.5 --interval 5
+    environment:
+      THRESHOLD: "${THRESHOLD:-0.5}"  # default to 0.5
+      INTERVAL: "${INTERVAL:-5}"      # default to 5
+    command: python main.py daemon --threshold $THRESHOLD --interval $INTERVAL
     restart: unless-stopped
 
 volumes:

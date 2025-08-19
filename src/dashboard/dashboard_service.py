@@ -4,6 +4,7 @@ from typing import List, Dict, Optional
 
 from src.logging_setup import configure_logging
 from src.models import Event, EnrichedEvent
+from src.ranking.ranking_engine import RankingEngine
 from src.storage.storage_service import VectorStorageService
 
 # Set logging
@@ -27,6 +28,7 @@ class DashboardService:
     def __init__(self, vector_storage: Optional[VectorStorageService] = None):
         """ Initialize the dashboard service with vector storage. """
         self.vector_storage = vector_storage
+        self.ranking_engine = RankingEngine()
 
 
     def search_events(self, query: str, limit: int = 5) -> List[Event]:
@@ -55,7 +57,7 @@ class DashboardService:
     def get_all_events_reranked(self, importance_weight: float = 0.7, recency_weight: float = 0.3) -> List[EnrichedEvent]:
         """Get all stored events for dashboard display."""
         try:
-            return self.vector_storage.get_all_events_reranked(importance_weight, recency_weight)
+            return self.vector_storage.get_all_events_reranked(self.ranking_engine, importance_weight, recency_weight)
         except Exception as e:
             # Log error and return empty list to maintain UI stability
             logger.error(f"Error retrieving events: {e}")

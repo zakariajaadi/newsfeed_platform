@@ -40,9 +40,9 @@ class IngestionOrchestrator:
         self.default_sources = [
 
             # Reddit communities focused on system administration and outages
-            SourceConfig("r/sysadmin", "reddit", {"url": "https://www.reddit.com/r/sysadmin.json?limit=8"}),
-            SourceConfig("r/outages", "reddit", {"url": "https://www.reddit.com/r/outages.json?limit=3"}),
-            SourceConfig("r/cybersecurity", "reddit", {"url": "https://www.reddit.com/r/cybersecurity.json?limit=4"}),
+            SourceConfig("r/sysadmin", "reddit", {"url": "https://www.reddit.com/r/sysadmin.json"}),
+            SourceConfig("r/outages", "reddit", {"url": "https://www.reddit.com/r/outages.json"}),
+            SourceConfig("r/cybersecurity", "reddit", {"url": "https://www.reddit.com/r/cybersecurity.json"}),
 
             # Security-focused RSS feeds from reputable sources
             SourceConfig("ars-security", "rss", {"url": "https://feeds.arstechnica.com/arstechnica/security"}),
@@ -52,8 +52,6 @@ class IngestionOrchestrator:
             SourceConfig("aws-status", "rss", {"url": "https://status.aws.amazon.com/rss/all.rss"}),
             SourceConfig("azure-status", "rss", {"url": "https://azurestatuscdn.azureedge.net/en-us/status/feed/"}),
         ]
-
-        #self.ingestion_engine = IngestionEngine(threshold=threshold, vector_storage=vector_storage)
 
         self.threshold = threshold
 

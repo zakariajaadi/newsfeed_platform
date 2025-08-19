@@ -27,6 +27,10 @@ class Event(BaseModel):
     def ensure_utc(cls, v):
         if isinstance(v, datetime):
             return v if v.tzinfo else v.replace(tzinfo=timezone.utc)
+        elif isinstance(v, str):
+            # Parse string and ensure UTC
+            dt = datetime.fromisoformat(v.replace('Z', '+00:00'))
+            return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
         return v
 
     class Config:
