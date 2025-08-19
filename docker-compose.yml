@@ -1,6 +1,6 @@
 services:
   api:
-    image: newsfeed-platform-image:latest
+    image: zakariajaadi/newsfeed-platform-image:latest
     ports:
       - "8000:8000"
     volumes:
@@ -16,7 +16,7 @@ services:
 
 
   dashboard:
-    image: newsfeed-platform-image:latest
+    image: zakariajaadi/newsfeed-platform-image:latest
     ports:
       - "8501:8501"
     environment:
@@ -38,7 +38,7 @@ services:
     restart: unless-stopped
 
   scheduler:
-    image: newsfeed-platform-image:latest
+    image: zakariajaadi/newsfeed-platform-image:latest
     volumes:
       - newsfeed-data:/app/data
     environment:

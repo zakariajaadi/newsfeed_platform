@@ -1,4 +1,4 @@
-﻿﻿
+﻿﻿﻿
 # 📰 IT Newsfeed platform
 
 ## 📝 Description
@@ -93,7 +93,9 @@ Opted for FAISS over traditional databases to provide native similarity search, 
 
 ##  📊 Architecture Diagram
 
-<img width="921" height="487" alt="image" src="https://github.com/user-attachments/assets/36ff6de4-27bb-4d32-9fb6-3e5bd24415e5" />
+<img width="921" height="487" alt="newsfeed_platfrom_architecture" src="https://github.com/user-attachments/assets/ee1508d7-b0f1-4ceb-bf98-a110a05fcab5" />
+
+
 
 ## 🚀 Installation & Setup
 
@@ -106,8 +108,8 @@ Opted for FAISS over traditional databases to provide native similarity search, 
 
 1. Clone the Git repository:
    ``` bash
-   git clone https://github.com/zakariajaadi/newsfeed-platform.git
-   cd newsfeed platform
+   git clone https://github.com/zakariajaadi/newsfeed_platform.git
+   cd newsfeed_platform
    ```
 2. Start docker compose services:
 
@@ -194,6 +196,9 @@ Previously fine-tuned a BERT model for phishing URL detection, achieving high ac
 - Source reputation scoring based on historical accuracy
 - Cross-source validation (multiple independent sources reporting same event)
 - Optional feedback loop: continuously update the dataset with confirmed false positives to improve future detection
+
+
+
 
 
 
