@@ -15,53 +15,29 @@ class RankingEngine:
     Calculates ranking scores by combining pre-computed semantic scores with recency
     """
 
-    def __init__(self):
+    def __init__(self,
+                 importance_weights: Dict,
+                 final_weights: Dict,
+                 urgency_multipliers: Dict,
+                 source_ranking_weights: Dict,
+                 recency_half_life_hours: int
+                 ):
         """Initialize ranking engine"""
 
         # Importance calculation weights (combine importance factors)
-        self.importance_weights = {
-            'semantic': 0.6,  # 60% - Core IT relevance from semantic similarity
-            'urgency': 0.3,  # 30% - Urgency keywords boost
-            'source': 0.1  # 10% - Source credibility
-        }
+        self.importance_weights = importance_weights
 
         # Final score weights (balance importance x recency)
-        self.final_weights = {
-            'importance': 0.7,  # 70%
-            'recency': 0.3  # 30%
-        }
+        self.final_weights = final_weights
 
         # Additional importance boosters for ranking (beyond basic IT relevance)
-        self.urgency_multipliers = {
-            'emergency': 1.6,
-            'critical': 1.5,
-            'urgent': 1.4,
-            'severe': 1.4,
-            'breaking': 1.3,
-            'immediate': 1.3,
-            'major': 1.2,
-            'alert': 1.2,
-        }
+        self.urgency_multipliers = urgency_multipliers
 
         # Source credibility for ranking
-        self.source_ranking_weights = {
-            'azure-health': 1.8,  # Official status pages get boost
-            'aws-status': 1.8,
-            'azure': 1.7,
-            'cve': 1.7,
-            'security': 1.6,  # Security advisories
-            'cert': 1.6,
-            'monitoring': 1.4,
-            'devops': 1.3,
-            'ars-technica': 1.2,  # Tech journalism
-            'reddit': 1.0,  # Community reports (baseline)
-            'github': 1.1,
-            'office': 0.8,  # Less critical for IT ops
-            'hr': 0.7,
-        }
+        self.source_ranking_weights = source_ranking_weights
 
         # RECENCY DECAY - How quickly old news becomes less important
-        self.recency_half_life_hours = 12  # Score halves every 12 hours (faster decay for IT)
+        self.recency_half_life_hours = recency_half_life_hours
 
     def calculate_ranking_score(self, event: Event, filter_explanation: Dict) -> Dict[str, float]:
         """
@@ -89,8 +65,8 @@ class RankingEngine:
         # Step 3 - final score balancing importance x recency
 
         final_score = (
-                importance_score * self.final_weights['importance'] +
-                recency_score * self.final_weights['recency']
+                importance_score * self.final_weights['importance_weight'] +
+                recency_score * self.final_weights['recency_weight']
         )
 
         component_scores = {
@@ -104,8 +80,8 @@ class RankingEngine:
             'is_relevant': filter_explanation['is_relevant']
         }
 
-        logger.debug(f"Balanced score: importance({importance_score:.3f}) × {self.final_weights['importance']} + "
-                     f"recency({recency_score:.3f}) × {self.final_weights['recency']} = {final_score:.3f}")
+        logger.debug(f"Balanced score: importance({importance_score:.3f}) × {self.final_weights['importance_weight']} + "
+                     f"recency({recency_score:.3f}) × {self.final_weights['recency_weight']} = {final_score:.3f}")
 
         return component_scores
 
@@ -139,9 +115,9 @@ class RankingEngine:
 
         # Combine importance factors with weights
         importance_score = (
-                semantic_score * self.importance_weights['semantic'] +
-                urgency_score * self.importance_weights['urgency'] +
-                source_score * self.importance_weights['source']
+                semantic_score * self.importance_weights['semantic_weight'] +
+                urgency_score * self.importance_weights['urgency_weight'] +
+                source_score * self.importance_weights['source_weight']
         )
 
         component_scores = {
@@ -218,9 +194,9 @@ class RankingEngine:
 
         # Calculate importance score from components (for explanation)
         importance_score = (
-                enriched_event.semantic_score * self.importance_weights['semantic'] +
-                enriched_event.urgency_score * self.importance_weights['urgency'] +
-                enriched_event.source_score * self.importance_weights['source']
+                enriched_event.semantic_score * self.importance_weights['semantic_weight'] +
+                enriched_event.urgency_score * self.importance_weights['urgency_weight'] +
+                enriched_event.source_score * self.importance_weights['source_weight']
         )
 
         return {
@@ -238,21 +214,21 @@ class RankingEngine:
                 'source_score': round(enriched_event.source_score, 3),
             },
             'weights': {
-                'importance_weight': self.final_weights['importance'],
-                'recency_weight': self.final_weights['recency'],
+                'importance_weight': self.final_weights['importance_weight'],
+                'recency_weight': self.final_weights['recency_weight'],
                 'importance_breakdown': self.importance_weights,
             },
             'age_hours': round(age_hours, 1),
-            'source': enriched_event.source,
+            'source_weight': enriched_event.source,
             'matched_reference': enriched_event.matched_reference,
             'formula': (
-                f"Importance({importance_score:.3f}) × {self.final_weights['importance']} + "
-                f"Recency({enriched_event.recency_score:.3f}) × {self.final_weights['recency']} = "
+                f"Importance({importance_score:.3f}) × {self.final_weights['importance_weight']} + "
+                f"Recency({enriched_event.recency_score:.3f}) × {self.final_weights['recency_weight']} = "
                 f"{enriched_event.final_score:.3f}"),
             'importance_formula': (
-                f"Semantic({enriched_event.semantic_score:.3f}) × {self.importance_weights['semantic']} + "
-                f"Urgency({enriched_event.urgency_score:.3f}) × {self.importance_weights['urgency']} + "
-                f"Source({enriched_event.source_score:.3f}) × {self.importance_weights['source']} = "
+                f"Semantic({enriched_event.semantic_score:.3f}) × {self.importance_weights['semantic_weight']} + "
+                f"Urgency({enriched_event.urgency_score:.3f}) × {self.importance_weights['urgency_weight']} + "
+                f"Source({enriched_event.source_score:.3f}) × {self.importance_weights['source_weight']} = "
                 f"{importance_score:.3f}")
         }
 

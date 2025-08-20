@@ -40,10 +40,8 @@ services:
     image: zakariajaadi/newsfeed-platform-image:latest
     volumes:
       - newsfeed-data:/app/data
-    environment:
-      THRESHOLD: "${THRESHOLD:-0.5}"  # default to 0.5
-      INTERVAL: "${INTERVAL:-5}"      # default to 5
-    command: python main.py daemon --threshold $THRESHOLD --interval $INTERVAL
+      - ./config:/app/config
+    command: python main.py daemon
     restart: unless-stopped
 
 volumes:

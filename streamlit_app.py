@@ -5,6 +5,8 @@ from typing import Dict, List
 from src.logging_setup import configure_logging
 from src.dashboard.dashboard_service import DashboardService
 from src.orchestration.ingestion_service_factory import IngestionServiceFactory
+from src.ranking.ranking_engine import RankingEngine
+from src.config import get_config
 
 # Configure logging
 configure_logging()
@@ -119,7 +121,10 @@ class StreamlitDashboardUI:
     def get_services():
         """Initialize and cache services - simple version."""
         shared_storage = IngestionServiceFactory.create_shared_storage()
-        dashboard_service = DashboardService(vector_storage=shared_storage)
+        ranking_engine = IngestionServiceFactory.create_ranking_engine()
+
+        dashboard_service = DashboardService(vector_storage=shared_storage,
+                                             ranking_engine=ranking_engine)
         return dashboard_service
 
     @staticmethod

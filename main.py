@@ -6,13 +6,12 @@ Main ingestion script - extracted from streamlit app.
 import argparse
 import asyncio
 import logging
-import time
 import signal
 import sys
+import time
 
 from src.logging_setup import configure_logging
 from src.orchestration.scheduler_service import SchedulerService
-from src.orchestration.ingestion_service_factory import IngestionServiceFactory
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -97,7 +96,7 @@ def start_scheduler(scheduler_service: SchedulerService, interval: int):
         return
 
     print(f"▶️ Starting scheduler with {interval} minute interval...")
-    scheduler_service.start_scheduler(interval)
+    scheduler_service.start_scheduler()
     print("✅ Scheduler started successfully")
 
 
@@ -126,7 +125,7 @@ def run_daemon_mode(scheduler_service: SchedulerService, interval: int):
     signal.signal(signal.SIGTERM, signal_handler)
 
     print(f"🚀 Starting scheduler daemon (interval: {interval} minutes)")
-    scheduler_service.start_scheduler(interval)
+    scheduler_service.start_scheduler()
 
     print("📊 Scheduler running in background. Press Ctrl+C to stop.")
     print("🔍 Use 'python main.py status' in another terminal to check status.")
@@ -141,44 +140,39 @@ def run_daemon_mode(scheduler_service: SchedulerService, interval: int):
         print("👋 Goodbye!")
 
 
-def main():
+def main(interval:int):
     """Main function."""
     parser = argparse.ArgumentParser(description="IT Newsfeed Ingestion Manager")
 
     parser.add_argument('command',
                         choices=['manual', 'start-scheduler', 'stop-scheduler', 'daemon', 'status'],
                         help='Command to run')
-    parser.add_argument('--threshold', type=float, default=0.5,
-                        help='Relevance threshold (default: 0.5)')
-    parser.add_argument('--interval', type=int, default=5,
-                        help='Scheduler interval in minutes (default: 5)')
 
     args = parser.parse_args()
 
     # Initialize services
-    shared_storage = IngestionServiceFactory.create_shared_storage()
-    scheduler_service = IngestionServiceFactory.create_scheduler(threshold=0.5, vector_storage=shared_storage)
+    scheduler_service = SchedulerService(interval)
 
     if args.command == 'manual':
         run_manual_ingestion(scheduler_service)
 
     elif args.command == 'start-scheduler':
-        start_scheduler(scheduler_service, args.interval)
+        start_scheduler(scheduler_service,interval)
 
     elif args.command == 'stop-scheduler':
         stop_scheduler(scheduler_service)
 
     elif args.command == 'daemon':
-        run_daemon_mode(scheduler_service, args.interval)
+        run_daemon_mode(scheduler_service,interval)
 
     elif args.command == 'status':
         show_status(scheduler_service)
 
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
-    load_dotenv()
-    main()
+    from src.config import get_config
+    cfg=get_config()
+    main(cfg.scheduler.interval)
 
 
 

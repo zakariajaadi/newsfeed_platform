@@ -25,10 +25,12 @@ class DashboardService:
         focusing solely on presentation and display concerns.
         """
 
-    def __init__(self, vector_storage: Optional[VectorStorageService] = None):
+    def __init__(self,
+                 vector_storage:VectorStorageService,
+                 ranking_engine:RankingEngine):
         """ Initialize the dashboard service with vector storage. """
         self.vector_storage = vector_storage
-        self.ranking_engine = RankingEngine()
+        self.ranking_engine = ranking_engine
 
 
     def search_events(self, query: str, limit: int = 5) -> List[Event]:

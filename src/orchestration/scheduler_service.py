@@ -1,14 +1,13 @@
 import asyncio
 import logging
 import time
-from typing import Dict, Optional
+from typing import Dict
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from src.logging_setup import configure_logging
-from src.orchestration.ingestion_orchestrator import IngestionOrchestrator
-from src.storage.storage_service import VectorStorageService
+from src.orchestration.ingestion_service_factory import IngestionServiceFactory
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -26,16 +25,17 @@ class SchedulerService:
     delegating actual ingestion logic to the IngestionOrchestrator
     """
 
-    def __init__(self,
-                 threshold: float = 0.5,
-                 vector_storage: Optional[VectorStorageService] = None):
+    def __init__(self, interval_minutes: int):
         """Initialize the scheduler service with ingestion orchestrator and job scheduler."""
 
         # Initialize orchestrator for actual ingestion
-        self.orchestrator = IngestionOrchestrator(threshold, vector_storage)
+        self.orchestrator = IngestionServiceFactory.create_orchestrator()
 
         # BackgroundScheduler for non-async environments
         self.scheduler = BackgroundScheduler() # AsyncIOScheduler()
+
+        # Scheduler interval
+        self.interval = interval_minutes
 
         # Track scheduler state and execution history
         self.is_running = False
@@ -79,7 +79,7 @@ class SchedulerService:
             logger.error(f"Scheduled ingestion exception: {e}")
             return error_result
 
-    def start_scheduler(self, interval_minutes: int = 5) -> None:
+    def start_scheduler(self) -> None:
         """Start the periodic scheduler with specified interval."""
 
         # Prevent multiple scheduler instances
@@ -91,7 +91,7 @@ class SchedulerService:
             # Configure scheduled job
             self.scheduler.add_job(
                 self.run_ingestion_cycle, # Function to execute
-                trigger=IntervalTrigger(minutes=interval_minutes), # Interval-based trigger
+                trigger=IntervalTrigger(minutes=self.interval), # Interval-based trigger
                 id='scheduled_ingestion', # Interval-based trigger
                 replace_existing=True, # Allow reconfiguration
                 max_instances=1  # Prevent overlapping runs
@@ -100,7 +100,7 @@ class SchedulerService:
             # Start the scheduler background thread
             self.scheduler.start()
             self.is_running = True
-            logger.info(f"Scheduler started - interval: {interval_minutes} minutes")
+            logger.info(f"Scheduler started - interval: {self.interval} minutes")
 
         except Exception as e:
             # Handle scheduler startup failures
@@ -135,7 +135,7 @@ class SchedulerService:
             'scheduler_running': getattr(self.scheduler, 'running', False),
             'jobs': jobs,
             'last_run_result': self.last_run_result,
-            'storage_stats': self.orchestrator.ingestion_engine.storage_service.get_index_stats()
+            'storage_stats': self.orchestrator.storage_service.get_index_stats()
         }
 
     def update_threshold(self, new_threshold: float) -> None:

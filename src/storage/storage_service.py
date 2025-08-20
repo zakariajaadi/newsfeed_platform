@@ -20,7 +20,7 @@ configure_logging()
 
 class VectorStorageService:
 
-    def __init__(self, embedding_dim=384, index_file_path="vector_index.faiss", metadata_file_path="index_metadata.pkl", autosave_every=0):
+    def __init__(self, embedding_dim, index_file_path, metadata_file_path, autosave_every):
         self.embedding_dim = embedding_dim         # Embedding dimension
         self.embedding_service = EmbeddingService() # Embedding service
         self.index_file_path = index_file_path # Index file path

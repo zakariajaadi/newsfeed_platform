@@ -7,7 +7,7 @@ from src.logging_setup import configure_logging
 from src.models import Event, EnrichedEvent
 from src.ranking.ranking_engine import RankingEngine
 from src.storage.storage_service import VectorStorageService
-
+from src.config import get_config
 # Set up logging
 logger = logging.getLogger(__name__)
 configure_logging()
@@ -31,25 +31,24 @@ class IngestionOrchestrator:
     """
 
     def __init__(self,
-                 threshold: float = 0.5,
-                 vector_storage: Optional[VectorStorageService] = None,
-                 source_configs: Optional[List[SourceConfig]] = None):
+                 semantic_filter: SemanticContentFilter,
+                 ranking_engine: RankingEngine,
+                 vector_storage: VectorStorageService,
+                 aggregation_service: AggregationService
+    ):
         """Initialize the ingestion orchestrator with configuration and dependencies."""
 
-        self.threshold = threshold
-
         # Initialize semantic filter for determining IT-relevance of events
-        self.semantic_filter = SemanticContentFilter(threshold=threshold)
+        self.semantic_filter = semantic_filter
 
         # Initialize ranking engine for scoring event importance
-        self.ranking_engine = RankingEngine()
+        self.ranking_engine = ranking_engine
 
         # Initialize storage service for persisting processed events
-        self.storage_service = vector_storage or VectorStorageService()
+        self.storage_service = vector_storage
 
         # Initialize aggregation service for fetching events from sources
-        # Uses provided sources or defaults to built-in IT-focused sources
-        self.aggregation_service = AggregationService(source_configs=source_configs)
+        self.aggregation_service = aggregation_service
 
         logger.info(f"Ingestion orchestrator initialized with {self.aggregation_service.get_source_count()} sources")
 
@@ -243,7 +242,6 @@ class IngestionOrchestrator:
     def update_threshold(self, new_threshold: float) -> None:
         """Update filtering threshold.
            This method allows runtime adjustment of filtering sensitivity without recreating the orchestrator instance"""
-        self.threshold = new_threshold
         self.semantic_filter.update_threshold(new_threshold)
         logger.info(f"Updated threshold to {new_threshold}")
 

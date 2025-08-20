@@ -6,8 +6,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, status
 
 from src.logging_setup import configure_logging
-from src.models import Event, IngestResponse, EnrichedEvent
-from src.orchestration.ingestion_orchestrator import IngestionOrchestrator
+from src.models import Event, IngestResponse
 from src.orchestration.ingestion_service_factory import IngestionServiceFactory
 
 # Set logging
@@ -21,8 +20,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Initialize engines
-ingestion_orchestrator= IngestionOrchestrator(vector_storage=IngestionServiceFactory.create_shared_storage())
+# Initialize orchestrator
+ingestion_orchestrator= IngestionServiceFactory.create_orchestrator()
 
 
 @app.post("/ingest", status_code=200, response_model=IngestResponse)

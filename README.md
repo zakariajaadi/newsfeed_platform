@@ -137,25 +137,12 @@ Opted for FAISS over traditional databases to provide native similarity search, 
    git clone https://github.com/zakariajaadi/newsfeed_platform.git
    cd newsfeed_platform
    ```
-2. **Environment Configuration (Optional):**  
-   Create a `.env` file in the project root to customize system behavior:
-
-   ```env
-   # Semantic filtering threshold (0.0-1.0)
-   # Higher values = stricter filtering, fewer events
-   THRESHOLD=0.5
-   
-   # Data collection interval in minutes
-   # How often the scheduler fetches new events
-   INTERVAL=5
-   ```
-   > Note: These variables are optional. If not specified, the system uses default values (THRESHOLD=0.5, INTERVAL=5).
-3. Start docker compose services:
-
+2. Start docker compose services:
    ```bash
    docker-compose up
    ```
-4. Check services status:  Check if all services are running:
+   > Note : Services run with default settings: 0.5 filtering threshold and 5-minute scheduler interval for ingestion. These values can be customized in the configuration file under the config directory if needed.
+3. Check services status:  Check if all services are running:
     ```bash
    docker ps
    ```
@@ -163,7 +150,7 @@ You should see three services:
 - **Dashboard:** Streamlit Web interface for event visualization
 - **Api:** REST API for event ingestion and retrieval
 - **Scheduler:** Background service for periodic news collection
-5. Access the services
+4. Access the services
 
 - **Dashboard:** http://localhost:8501
 - **API doc:** : http://localhost:8000/
@@ -186,10 +173,6 @@ Api doc
 ## 🔮 Future Perspectives
 
 ### Configuration Management
-
-**Current State**: Parameters like semantic similarity threshold (0.5), reference phrases, ranking weights, and source priorities are hardcoded throughout the application.
-
-**Proposed Enhancement**: Centralized configuration system using YAML/JSON files.
 
 ###  Re-ranking 
 

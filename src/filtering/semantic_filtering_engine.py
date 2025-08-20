@@ -1,5 +1,5 @@
 import logging
-
+from typing import List
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -26,7 +26,8 @@ class SemanticContentFilter:
         as it can detect semantic relationships even when exact keywords don't match.
     """
 
-    def __init__(self, threshold: float = 0.5):
+    def __init__(self, threshold: float,
+                 it_reference_phrases: List[str]):
         """
         Initialize the semantic content filter with IT-relevant reference phrases.
         """
@@ -34,30 +35,8 @@ class SemanticContentFilter:
         self.embedding_service = get_embedding_service_instance()
 
         # Comprehensive set of IT-relevant reference phrases
-        self.it_reference_phrases = [
-            # Infrastructure & Systems
-            "server outage", "system failure", "network disruption",
-            "database crash", "service downtime", "infrastructure issue",
-            "hardware failure", "software malfunction", "system maintenance",
+        self.it_reference_phrases = it_reference_phrases
 
-            # Security
-            "security breach", "cyber attack", "data breach", "vulnerability",
-            "malware detected", "unauthorized access", "security incident",
-            "phishing attack", "ransomware", "security alert",
-
-            # Development & Operations
-            "critical bug", "emergency patch", "deployment failed",
-            "application error", "API outage", "configuration error",
-            "performance issue", "memory leak", "disk space full",
-
-            # Monitoring & Alerts
-            "system alert", "monitoring alert", "threshold exceeded",
-            "service unavailable", "connection timeout", "high latency",
-
-            # Cloud & DevOps
-            "cloud service disruption", "container failure", "kubernetes error",
-            "CI/CD pipeline failure", "automated backup failed"
-        ]
 
         # Pre-compute embeddings for reference phrases to optimize performance
         logger.info(f"Pre-computing embeddings for {len(self.it_reference_phrases)} reference phrases...")

@@ -1,0 +1,135 @@
+# Storage settings
+vector_storage:
+
+  index_file_name: "vector_index.faiss"
+  metadata_file_name: "index_metadata.pkl"
+  embedding_dim: 384 # should be equal to model embedding dimension
+  autosave_every: 1
+
+# Scheduler Settings
+scheduler:
+  interval: 1
+
+# Data Aggregation Settings
+fetching:
+
+  sources:
+    # Reddit
+    reddit:
+      - name: "r/sysadmin"
+        url: "https://www.reddit.com/r/sysadmin.json"
+      - name: "r/outages"
+        url: "https://www.reddit.com/r/outages.json"
+      - name: "r/cybersecurity"
+        url: "https://www.reddit.com/r/cybersecurity.json"
+
+    # RSS
+    rss:
+      # Security
+      - name: "ars-security"
+        url: "https://feeds.arstechnica.com/arstechnica/security"
+      - name: "krebs-security"
+        url: "https://krebsonsecurity.com/feed/"
+      # Cloud
+      - name: "aws-status"
+        url: "https://status.aws.amazon.com/rss/all.rss"
+      - name: "azure-status"
+        url: "https://azurestatuscdn.azureedge.net/en-us/status/feed/"
+
+# Filter settings
+filtering:
+    threshold: 0.5
+    it_reference_phrases:
+      # Infrastructure & Systems
+      - "server outage"
+      - "system failure"
+      - "network disruption"
+      - "database crash"
+      - "service downtime"
+      - "infrastructure issue"
+      - "hardware failure"
+      - "software malfunction"
+      - "system maintenance"
+
+      # Security
+      - "security breach"
+      - "cyber attack"
+      - "data breach"
+      - "vulnerability"
+      - "malware detected"
+      - "unauthorized access"
+      - "security incident"
+      - "phishing attack"
+      - "ransomware"
+      - "security alert"
+
+      # Development & Operations
+      - "critical bug"
+      - "emergency patch"
+      - "deployment failed"
+      - "application error"
+      - "API outage"
+      - "configuration error"
+      - "performance issue"
+      - "memory leak"
+      - "disk space full"
+
+      # Monitoring & Alerts
+      - "system alert"
+      - "monitoring alert"
+      - "threshold exceeded"
+      - "service unavailable"
+      - "connection timeout"
+      - "high latency"
+
+      # Cloud & DevOps
+      - "cloud service disruption"
+      - "container failure"
+      - "kubernetes error"
+      - "CI/CD pipeline failure"
+      - "automated backup failed"
+
+# Ranker settings
+ranking:
+  # Content scoring weights (should sum to 1.0)
+  content_scoring:
+    semantic_weight: 0.6
+    urgency_weight: 0.3
+    source_weight: 0.1
+
+  # Final score weights (should sum to 1.0)
+  final_scoring:
+    importance_weight: 0.7
+    recency_weight: 0.3
+
+  # Additional importance boosters for ranking (beyond basic IT relevance)
+  urgency_multipliers:
+    emergency: 1.6
+    critical: 1.5
+    urgent: 1.4
+    severe: 1.4
+    breaking: 1.3
+    immediate: 1.3
+    major: 1.2
+    alert: 1.2
+
+  # Source credibility for ranking
+  source_ranking_weights:
+    azure-health: 1.8  # Official status pages get boost
+    aws-status: 1.8
+    azure: 1.7
+    cve: 1.7
+    security: 1.6  # Security advisories
+    cert: 1.6
+    monitoring: 1.4
+    devops: 1.3
+    ars-technica: 1.2  # Tech journalism
+    reddit: 1.0  # Community reports (baseline)
+    github: 1.1
+    office: 0.8  # Less critical for IT ops
+    hr: 0.7
+
+  # Recency decay - How quickly old news becomes less important
+  recency_half_life_hours: 12  # Score halves every 12 hours
+
+
