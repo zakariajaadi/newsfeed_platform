@@ -22,36 +22,19 @@ class IngestionOrchestrator:
     **Pipeline Stages:**
     1. **Fetch**: Collect events from various sources (Reddit, RSS feeds, cloud status pages)
     2. **Filter**: Remove duplicates and apply semantic filtering for IT relevance
-    3. **Rank** : Rank events based on their ranking score
+    3. **Rank**: Rank events based on their ranking score
     4. **Store**: Persist relevant events in vector storage for retrieval
 
-    Design Pattern :
-
+    Design Pattern:
     This orchestrator follows the "Facade" design pattern, providing a simplified interface
-    to coordinate multiple complex subsystems (aggregation, filtering, ranking storage).
+    to coordinate multiple complex subsystems (aggregation, filtering, ranking, storage).
     """
 
     def __init__(self,
                  threshold: float = 0.5,
-                 vector_storage: Optional[VectorStorageService] = None):
+                 vector_storage: Optional[VectorStorageService] = None,
+                 source_configs: Optional[List[SourceConfig]] = None):
         """Initialize the ingestion orchestrator with configuration and dependencies."""
-
-        # Pre-configured data sources covering major IT/security information feeds
-        self.default_sources = [
-
-            # Reddit communities focused on system administration and outages
-            SourceConfig("r/sysadmin", "reddit", {"url": "https://www.reddit.com/r/sysadmin.json"}),
-            SourceConfig("r/outages", "reddit", {"url": "https://www.reddit.com/r/outages.json"}),
-            SourceConfig("r/cybersecurity", "reddit", {"url": "https://www.reddit.com/r/cybersecurity.json"}),
-
-            # Security-focused RSS feeds from reputable sources
-            SourceConfig("ars-security", "rss", {"url": "https://feeds.arstechnica.com/arstechnica/security"}),
-            SourceConfig("krebs-security", "rss", {"url": "https://krebsonsecurity.com/feed/"}),
-
-            # Cloud provider status feeds for infrastructure monitoring
-            SourceConfig("aws-status", "rss", {"url": "https://status.aws.amazon.com/rss/all.rss"}),
-            SourceConfig("azure-status", "rss", {"url": "https://azurestatuscdn.azureedge.net/en-us/status/feed/"}),
-        ]
 
         self.threshold = threshold
 
@@ -64,19 +47,18 @@ class IngestionOrchestrator:
         # Initialize storage service for persisting processed events
         self.storage_service = vector_storage or VectorStorageService()
 
-        # Initialize storage service for fetching events from sources
-        self.aggregation_service = AggregationService(source_configs=self.default_sources)
+        # Initialize aggregation service for fetching events from sources
+        # Uses provided sources or defaults to built-in IT-focused sources
+        self.aggregation_service = AggregationService(source_configs=source_configs)
 
-        logger.info("Ingestion orchestrator initialized")
-
+        logger.info(f"Ingestion orchestrator initialized with {self.aggregation_service.get_source_count()} sources")
 
     async def fetch_events(self) -> List[Event]:
         """Fetch events from configured data sources using the aggregation service"""
-
         try:
             # Fetch events asynchronously from all configured sources
             events = await self.aggregation_service.fetch_all_events()
-            logger.info(f"Fetched {len(events)} events from {len(self.default_sources)} sources")
+            logger.info(f"Fetched {len(events)} events from {self.aggregation_service.get_source_count()} sources")
             return events
         except Exception as e:
             # Log error and return empty list to maintain pipeline stability
@@ -103,7 +85,7 @@ class IngestionOrchestrator:
         if not events:
             return filter_result
 
-        # STEP 1 -  DUPLICATE DETECTION
+        # STEP 1 - DUPLICATE DETECTION
         # Filter out duplicates based on events hash
         logger.info(f"Checking {len(events)} events for duplicates...")
         new_events = self.storage_service.filter_duplicates(events)
@@ -199,7 +181,7 @@ class IngestionOrchestrator:
         logger.info("Starting full ingestion pipeline")
 
         try:
-            # Step 1 : Fetch events from sources
+            # Step 1: Fetch events from sources
             events = await self.fetch_events()
 
             # Handle case where no events were fetched
@@ -213,11 +195,11 @@ class IngestionOrchestrator:
                     'message': 'No events fetched'
                 }
 
-            # Step 2 : Filter events  (includes deduplication + semantic filtering)
+            # Step 2: Filter events (includes deduplication + semantic filtering)
             filter_result = self.filter_events(events)
 
-            # Step 3 : Rank events (relevant only)
-            # Extract relevant events form filter_result
+            # Step 3: Rank events (relevant only)
+            # Extract relevant events from filter_result
             relevant_events = [item['event'] for item in filter_result['relevant_events']]
             events_explanations = [item['explanation'] for item in filter_result['relevant_events']]
 
@@ -264,3 +246,7 @@ class IngestionOrchestrator:
         self.threshold = new_threshold
         self.semantic_filter.update_threshold(new_threshold)
         logger.info(f"Updated threshold to {new_threshold}")
+
+    def get_active_sources(self) -> List[str]:
+        """Get the names of all active data sources"""
+        return self.aggregation_service.get_source_names()

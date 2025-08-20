@@ -28,19 +28,19 @@ class StreamlitDashboardUI:
         """Apply custom CSS styles."""
         st.markdown("""
         <style>
-        
+
         .css-1d391kg {
             width: 150px !important;
         }
-        
+
         .css-1lcbmhc {
             width: 150px !important;
         }
-        
+
         section[data-testid="stSidebar"] {
             width: 150px !important;
         }
-        
+
         .metric-container {
             background: #f8f9fa;
             padding: 1rem;
@@ -68,14 +68,49 @@ class StreamlitDashboardUI:
             border-radius: 8px;
             margin: 1rem 0;
         }
-        
+
         .event-body {
             background-color: #f0f8ff;
             padding: 0.8rem;
             border-radius: 6px;
             margin: 0.5rem 0;
         }
-        
+
+        .clear-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        /* Make all sidebar elements same width */
+        .stButton > button {
+            width: 100% !important;
+        }
+
+        .stNumberInput > div > div > input {
+            width: 100% !important;
+        }
+
+        .stSlider > div > div {
+            width: 100% !important;
+        }
+
+        .stSelectbox > div > div {
+            width: 100% !important;
+        }
+
+        section[data-testid="stSidebar"] .stButton > button,
+        section[data-testid="stSidebar"] .stNumberInput > div > div > input,
+        section[data-testid="stSidebar"] .stSlider > div > div,
+        section[data-testid="stSidebar"] .stSelectbox > div > div {
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
         </style>
         """, unsafe_allow_html=True)
 
@@ -103,53 +138,88 @@ class StreamlitDashboardUI:
         except:
             return 0
 
-    def render_sidebar(self) -> tuple:
+    def render_sidebar(self, dashboard_service: DashboardService) -> tuple:
         """Render sidebar controls."""
 
         st.sidebar.header("⚙️ Settings ")
 
-        # Refresh button in sidebar
-        st.sidebar.subheader("Data")
-        if st.sidebar.button("🔄 Refresh Data", help="Reload data from storage"):
+        # Data management section
+        st.sidebar.subheader("Data Management")
+
+        # Refresh button (original layout)
+        if st.sidebar.button("🔄 Refresh Data", help="Reload data from storage", use_container_width=True):
             st.cache_resource.clear()
             st.success("✅ Data refreshed!")
             st.rerun()
 
+        # Clear button with two-step confirmation
+        if 'confirm_clear' not in st.session_state:
+            st.session_state.confirm_clear = False
+
+        if not st.session_state.confirm_clear:
+            if st.sidebar.button("🗑️ Clear All Data", help="Clear all stored events", type="secondary",
+                                 use_container_width=True):
+                st.session_state.confirm_clear = True
+                st.rerun()
+        else:
+            st.sidebar.markdown("⚠️ **Are you sure?**")
+            col_yes, col_no = st.sidebar.columns(2)
+
+            with col_yes:
+                if st.button("✅ Yes", type="primary", use_container_width=True, key="confirm_yes"):
+                    if dashboard_service.clear_storage():
+                        st.cache_resource.clear()
+                        st.success("✅ All data cleared!")
+                        st.session_state.confirm_clear = False
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to clear data")
+                        st.session_state.confirm_clear = False
+
+            with col_no:
+                if st.button("❌ Cancel", use_container_width=True, key="confirm_no"):
+                    st.session_state.confirm_clear = False
+                    st.rerun()
+
+        # Warning text only during confirmation
+        if st.session_state.get('confirm_clear', False):
+            st.sidebar.markdown("⚠️ **This action cannot be undone!**")
+
         # Display options
         st.sidebar.subheader("Display Options")
-        max_events = st.sidebar.number_input("Max events per tab", min_value=5, max_value=100, value=20)
-        show_timestamps = st.sidebar.checkbox("Show timestamps", value=True)
+        max_events = st.sidebar.number_input("Max events per tab", min_value=5, max_value=100, value=20,
+                                             key="max_events_input")
+        show_timestamps = st.sidebar.checkbox("Show timestamps", value=True, key="show_timestamps_checkbox")
 
         # Importance vs Recency slider
-        st.sidebar.subheader("Ranking")
+        st.sidebar.subheader("Ranking balance")
         importance_weight = st.sidebar.slider(
             "Importance x Recency",
             min_value=0.0,
             max_value=1.0,
             value=0.7,
-            step=0.1
+            step=0.1,
+            key="importance_weight_slider"
         )
         recency_weight = 1.0 - importance_weight
         st.sidebar.markdown(f"<small>Importance weight= {importance_weight:.2f} </small>", unsafe_allow_html=True)
         st.sidebar.markdown(f"<small>Recency weight= {recency_weight:.2f} </small>", unsafe_allow_html=True)
-
 
         return max_events, show_timestamps, importance_weight, recency_weight
 
     def render_ingestion_notice(self):
         """Show notice about using main.py for ingestion."""
         st.markdown("""
-        <div class="ingestion-note">
-            <h4>💡 Data Ingestion</h4>
-            <p>To populate data, use the command line:</p>
-            <ul>
-                <li><strong>Manual:</strong> <code>python main.py manual</code></li>
-                <li><strong>Background:</strong> <code>python main.py scheduler</code></li>
-                <li><strong>Status:</strong> <code>python main.py status</code></li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
+                <div class="ingestion-note">
+                    <h4>📭 No Events In Storage ! </h4>
+                    <p>To populate data:</p>
+                    <ul>
+                        <li>🐳 <strong>Make sure the "scheduler" Docker container is running</strong></li>
+                        <li>⏱️ <strong>Wait 5 minutes</strong> (or the configured interval) for automatic data collection</li>
+                    </ul>
+                    <p><em>The scheduler automatically fetches IT news by default every 5 minutes from Reddit, and RSS feeds.</em></p>
+                </div>
+                """, unsafe_allow_html=True)
 
     def render_dashboard_section(self, dashboard_service: DashboardService,
                                  max_events: int,
@@ -168,14 +238,14 @@ class StreamlitDashboardUI:
         )
 
         if not all_events:
-            st.info("No events in storage. Use main.py to run ingestion.")
+            #st.info("No events in storage.")
             self.render_ingestion_notice()
 
         # Format events for display
         formatted_events = dashboard_service.format_events_for_display(all_events)
 
         # Filter controls
-        #st.subheader("Filters")
+        # st.subheader("Filters")
         col1, col2 = st.columns(2)
 
         with col1:
@@ -254,7 +324,6 @@ class StreamlitDashboardUI:
                               max_events: int, show_timestamps: bool):
         """Render events"""
 
-
         st.subheader(f"{title} ({len(events)} total)")
 
         if not events:
@@ -320,8 +389,6 @@ class StreamlitDashboardUI:
                 st.info("No matching events found.")
 
 
-
-
 def main():
     """Main application."""
     ui = StreamlitDashboardUI()
@@ -333,14 +400,14 @@ def main():
     # Get services (no modification time tracking needed)
     dashboard_service = ui.get_services()
 
-    max_events, show_timestamps, importance_weight, recency_weight = ui.render_sidebar()
+    max_events, show_timestamps, importance_weight, recency_weight = ui.render_sidebar(dashboard_service)
 
     tab1, tab2, tab3 = st.tabs(["📊 Dashboard", "📰 Events", "🔍 Search"])
 
     with tab1:
         all_events = dashboard_service.get_all_events_ranked()
         if not all_events:
-            st.info("No events in storage. Use main.py to run ingestion.")
+            #st.info("No events in storage.")
             ui.render_ingestion_notice()
         else:
             stats = dashboard_service.get_display_statistics(all_events)
@@ -351,8 +418,6 @@ def main():
 
     with tab3:
         ui.render_search_section(dashboard_service)
-
-
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 import aiohttp
 import feedparser
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 configure_logging()
 
 @dataclass
-class   SourceConfig:
+class SourceConfig:
     """Configuration for all sources"""
     name: str
     plugin_type: str
@@ -40,11 +40,10 @@ class RedditSourcePlugin(BaseSourcePlugin):
     """Plugin to fetch posts from Reddit using JSON API"""
 
     async def fetch_events(self, session: aiohttp.ClientSession) -> List[Event]:
-
         # Fetch source url
         url = self.config.config['url']
 
-        # Make HTTP request to Reddit's JSON AP
+        # Make HTTP request to Reddit's JSON API
         try:
             async with session.get(url) as resp:
                 # Check if request was successful (HTTP 200)
@@ -61,12 +60,11 @@ class RedditSourcePlugin(BaseSourcePlugin):
         # Initialize list to store converted Event objects
         events = []
 
-        # Navigate Reddit's JSON structure to get post
+        # Navigate Reddit's JSON structure to get posts
         posts_data = data.get('data', {}).get('children', [])
 
         # Process each Reddit post
         for post_data in posts_data:
-
             # Extract the actual post
             post = post_data['data']
 
@@ -75,10 +73,8 @@ class RedditSourcePlugin(BaseSourcePlugin):
                 id=f"reddit_{post['id']}",
                 source=self.name,
                 title=post.get('title', ''),
-
                 # Use selftext (text posts) or URL (link posts) as body
                 body=post.get('selftext') or post.get('url', ''),
-
                 # Convert Reddit's UTC timestamp to Python datetime
                 published_at=datetime.fromtimestamp(post['created_utc'], tz=timezone.utc)
             )
@@ -144,9 +140,7 @@ class RSSSourcePlugin(BaseSourcePlugin):
 
 
 class PluginRegistry:
-
-    """Registry for source plugins, allows easy extension with new data sources without
-    modifying existing code"""
+    """Registry for source plugins, allows easy extension with new data sources"""
 
     def __init__(self):
         # Dictionary mapping plugin type identifiers to their implementation classes
@@ -156,23 +150,26 @@ class PluginRegistry:
         }
 
     def get(self, plugin_type: str):
-        """ Retrieve a plugin class by its type identifier. """
+        """Retrieve a plugin class by its type identifier."""
         # Look up plugin class in registry dictionary
         return self._plugins.get(plugin_type)
 
     def register_plugin(self, plugin_type: str, plugin_class):
         """Allow registration of custom plugins"""
-
         # Add or update plugin in the registry dictionary
         self._plugins[plugin_type] = plugin_class
+
 
 class AggregationService:
     """
     Orchestrates data collection from multiple sources (RSS feeds, Reddit, etc.)
     """
 
-    def __init__(self, source_configs: List[SourceConfig]):
-        """ Initialize the aggregation service with configured data sources"""
+    def __init__(self, source_configs: Optional[List[SourceConfig]] = None):
+        """Initialize the aggregation service with configured data sources"""
+
+        # Use provided sources or fall back to defaults
+        self.source_configs = source_configs or self._get_default_sources()
 
         # Initialize plugin registry for managing different source types (Reddit, RSS, etc.)
         self.registry = PluginRegistry()
@@ -180,7 +177,7 @@ class AggregationService:
         # Initialize and configure source plugins based on provided configurations
         self.sources = []
 
-        for config in source_configs:
+        for config in self.source_configs:
             # Skip sources that are explicitly disabled in configuration
             if not config.enabled:
                 logger.info(f"Skipping disabled source: {config.name}")
@@ -195,7 +192,24 @@ class AggregationService:
             else:
                 logger.warning(f"Unknown plugin type: {config.plugin_type} for source: {config.name}")
 
-        logger.info(f"NewsAggregationService initialized with {len(self.sources)} active sources")
+        logger.info(f"AggregationService initialized with {len(self.sources)} active sources")
+
+    def _get_default_sources(self) -> List[SourceConfig]:
+        """Get the default IT-focused data sources configuration"""
+        return [
+            # Reddit communities focused on system administration and outages
+            SourceConfig("r/sysadmin", "reddit", {"url": "https://www.reddit.com/r/sysadmin.json"}),
+            SourceConfig("r/outages", "reddit", {"url": "https://www.reddit.com/r/outages.json"}),
+            SourceConfig("r/cybersecurity", "reddit", {"url": "https://www.reddit.com/r/cybersecurity.json"}),
+
+            # Security-focused RSS feeds from reputable sources
+            SourceConfig("ars-security", "rss", {"url": "https://feeds.arstechnica.com/arstechnica/security"}),
+            SourceConfig("krebs-security", "rss", {"url": "https://krebsonsecurity.com/feed/"}),
+
+            # Cloud provider status feeds for infrastructure monitoring
+            SourceConfig("aws-status", "rss", {"url": "https://status.aws.amazon.com/rss/all.rss"}),
+            SourceConfig("azure-status", "rss", {"url": "https://azurestatuscdn.azureedge.net/en-us/status/feed/"}),
+        ]
 
     async def fetch_all_events(self) -> List[Event]:
         """
@@ -211,14 +225,12 @@ class AggregationService:
 
         # Create shared HTTP session for all source requests
         async with aiohttp.ClientSession() as session:
-
             # Create concurrent fetch tasks for all active sources
             fetch_tasks = [source.fetch_events(session) for source in self.sources]
             results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
 
         # Process results from each source and handle any errors
         for i, result in enumerate(results):
-
             # Get the source name for logging purposes
             source_name = self.sources[i].name
 
@@ -233,5 +245,10 @@ class AggregationService:
         logger.info(f"Total events fetched: {len(all_events)}")
         return all_events
 
+    def get_source_count(self) -> int:
+        """Get the number of active sources"""
+        return len(self.sources)
 
-
+    def get_source_names(self) -> List[str]:
+        """Get the names of all active sources"""
+        return [source.name for source in self.sources]

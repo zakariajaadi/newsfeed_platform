@@ -186,10 +186,12 @@ class DashboardService:
         # Extract unique sources and sort alphabetically for consistent UI
         return sorted(set(event.source for event in events if event.source))
 
-    def clear_storage(self) -> None:
+    def clear_storage(self) -> bool:
         """Clear all storage data - dashboard management function."""
         try:
             self.vector_storage.clear_index()
             logger.info("Storage cleared via dashboard")
+            return True
         except Exception as e:
             logger.error(f"Error clearing storage: {e}")
+            return False

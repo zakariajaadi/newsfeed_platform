@@ -48,7 +48,33 @@ The system uses machine learning-based content filtering to identify relevant IT
 
 ## 🎯 Key Design Decisions
 
-### 1. Filtering method:
+### 1. Fetching method:
+
+Opted for a **plugin-based architecture** with asynchronous processing to efficiently aggregate data from multiple IT sources.
+
+**Plugin System:**
+Defined two core plugins:
+- **RedditSourcePlugin:** Fetches posts from Reddit's JSON API, extracting titles, content (selftext/URLs), timestamps, and post IDs
+- **RSSSourcePlugin:** Parses RSS/XML feeds using feedparser, extracting article titles, summaries, publication dates, and links
+
+**Concurrent Processing:**
+- Uses `asyncio.gather()` to fetch from all 7 sources simultaneously
+- Shared HTTP session for optimal performance (2-5 second total response time)
+- Individual source failures don't break the pipeline
+
+**Extensible Design:**
+- Plugin registry system allows easy addition of new source types
+- Clean separation between source configuration and implementation
+- Standardized `Event` objects across all data sources
+- New plugins only need to implement `fetch_events()` method from `BaseSourcePlugin`
+
+**Current Data Sources:**
+- **Reddit Communities (3):** r/sysadmin, r/outages, r/cybersecurity
+- **RSS Feeds (4):** 
+  - Security: Ars Technica Security, Krebs on Security
+  - Cloud Status: AWS Status, Azure Status
+
+### 2. Filtering method:
 
 Opted for semantic embeddings instead of traditional keyword matching, for deeper context understanding, improved relevance, and fewer false positives.
 
@@ -68,7 +94,7 @@ Implemented a multi-stage filtering approach to ensure content quality and elimi
 - Configurable threshold (default: 0.5) to control filtering strictness
 - Only semantically relevant events proceed to ranking stage
 
-### 2. Ranking method:
+### 3. Ranking method:
 Opted for a two-stage approach, balancing importance and recency:
 1. **Importance score calculation:**
 
@@ -84,11 +110,11 @@ Opted for a two-stage approach, balancing importance and recency:
 
 - formula : `Final Score = Importance(70%) + Recency(30%)`
 
-### 3. Modular Architecture: 
+### 4. Modular Architecture: 
 
 Separated core concerns (aggregation, embedding, filtering, ranking, storage, orchestration, UI, and scheduling) into independent components for improved testability, maintainability, and extensibility.
 
-### 4. Vector Storage
+### 5. Vector Storage
 Opted for FAISS over traditional databases to provide native similarity search, efficient handling of sentence embeddings, and scalable vector operations essential for semantic filtering.
 
 ##  📊 Architecture Diagram
@@ -111,12 +137,25 @@ Opted for FAISS over traditional databases to provide native similarity search, 
    git clone https://github.com/zakariajaadi/newsfeed_platform.git
    cd newsfeed_platform
    ```
-2. Start docker compose services:
+2. **Environment Configuration (Optional):**  
+   Create a `.env` file in the project root to customize system behavior:
+
+   ```env
+   # Semantic filtering threshold (0.0-1.0)
+   # Higher values = stricter filtering, fewer events
+   THRESHOLD=0.5
+   
+   # Data collection interval in minutes
+   # How often the scheduler fetches new events
+   INTERVAL=5
+   ```
+   > Note: These variables are optional. If not specified, the system uses default values (THRESHOLD=0.5, INTERVAL=5).
+3. Start docker compose services:
 
    ```bash
    docker-compose up
    ```
-3. Check services status:  Check if all services are running:
+4. Check services status:  Check if all services are running:
     ```bash
    docker ps
    ```
@@ -124,7 +163,7 @@ You should see three services:
 - **Dashboard:** Streamlit Web interface for event visualization
 - **Api:** REST API for event ingestion and retrieval
 - **Scheduler:** Background service for periodic news collection
-4. Access the services
+5. Access the services
 
 - **Dashboard:** http://localhost:8501
 - **API doc:** : http://localhost:8000/
